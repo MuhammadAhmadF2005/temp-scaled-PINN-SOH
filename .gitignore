@@ -1,0 +1,8 @@
+venv/
+new_venv/
+*__pycache__
+# Dataset_1_NCA_battery/
+*best_model.pth
+stuff/
+PINN4SOH/
+plots*/
