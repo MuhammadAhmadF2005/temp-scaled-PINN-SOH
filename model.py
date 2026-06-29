@@ -40,10 +40,10 @@ class SolutionNetwork(nn.Module):
 class DynamicsNetwork(nn.Module):
     def __init__(self, n_features):
         super(DynamicsNetwork, self).__init__()
-        # Input: t_arr (1) + features (n_features) + u (1) = 18
+        # Input: t_arr (1) + features (n_features) + u (1) + u_t (1) + u_x (n_features)
         # PINN4SOH uses 3 layers MLP with hidden size 60
         self.net = nn.Sequential(
-            nn.Linear(1 + n_features + 1, 60),
+            nn.Linear(1 + n_features + 1 + 1 + n_features, 60),
             Sin(),
             nn.Linear(60, 60),
             Sin(),
@@ -59,8 +59,8 @@ class DynamicsNetwork(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
         
-    def forward(self, t_arr, x, u):
-        inputs = torch.cat([t_arr, x, u], dim=1)
+    def forward(self, t_arr, x, u, u_t, u_x):
+        inputs = torch.cat([t_arr, x, u, u_t, u_x], dim=1)
         return self.net(inputs)
 
 class BatteryPINN(nn.Module):
@@ -91,10 +91,6 @@ class BatteryPINN(nn.Module):
         return t_arr
         
     def forward(self, x, temp_c, cycle):
-        # We need t_arr to require gradients to compute L_PDE
-        # But cycle doesn't have gradients. We compute t_arr and then make it require_grad=True
-        # Actually it's better if we just derive wrt t_arr directly
-        
         if not self.use_scaling:
             t_arr = cycle * 1.0 / 100.0
         else:
@@ -131,7 +127,14 @@ def compute_pinn_losses(model, x, temp_c, cycle, true_u, alpha=0.1, beta=0.1):
         create_graph=True
     )[0]
     
-    G_pred = model.G_net(t_arr, x, u)
+    # Compute du/dx (gradient w.r.t features)
+    u_x = torch.autograd.grad(
+        u, x,
+        grad_outputs=torch.ones_like(u),
+        create_graph=True
+    )[0]
+    
+    G_pred = model.G_net(t_arr, x, u, u_t, u_x)
     pde_loss = torch.mean((u_t - G_pred)**2)
     
     # 3. Monotonicity Loss

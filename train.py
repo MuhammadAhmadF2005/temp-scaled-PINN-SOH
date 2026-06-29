@@ -37,9 +37,10 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=100, use_scaling=
         
         for batch_i, (features, soh, temp, cycle) in enumerate(train_loader):
             features, soh, temp, cycle = features.to(device), soh.to(device), temp.to(device), cycle.to(device)
+            features.requires_grad_(True)
             optimizer.zero_grad()
             
-            loss, mse_loss, pde_loss, mono_loss = compute_pinn_losses(model, features, temp, cycle, soh, alpha=10, beta=2)
+            loss, mse_loss, pde_loss, mono_loss = compute_pinn_losses(model, features, temp, cycle, soh, alpha=0.01, beta=0.1)
             
             loss.backward()
             optimizer.step()
@@ -57,16 +58,13 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=100, use_scaling=
         
         model.eval()
         val_loss = 0.0
-        
-        with torch.no_grad():
-            for features, soh, temp, cycle in val_loader:
-                pass
-        
+                
         # We will compute full PINN validation loss using enable_grad()
         with torch.enable_grad():
             for features, soh, temp, cycle in val_loader:
                 features, soh, temp, cycle = features.to(device), soh.to(device), temp.to(device), cycle.to(device)
-                loss, _, _, _ = compute_pinn_losses(model, features, temp, cycle, soh, alpha=1.0, beta=1.0)
+                features.requires_grad_(True)
+                loss, _, _, _ = compute_pinn_losses(model, features, temp, cycle, soh, alpha=0.01, beta=0.1)
                 val_loss += loss.item() * features.size(0)
         
         n_val = len(val_loader.dataset)

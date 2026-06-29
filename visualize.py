@@ -48,10 +48,22 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
                 temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
                 cycle_t = torch.tensor([[cycle_idx + 1]], dtype=torch.float32).to(device)
                 
+                # Enable dropout for Monte Carlo sampling
+                for m in model.modules():
+                    if m.__class__.__name__.startswith('Dropout'):
+                        m.train()
+                        
+                n_mc_samples = 30
+                u_preds = []
                 with torch.no_grad():
-                    u_pred, t_arr = model(x_t, temp_t, cycle_t)
-                    
-                u_pred_val = u_pred.item() * soh_range + soh_min
+                    for _ in range(n_mc_samples):
+                        u_pred, t_arr = model(x_t, temp_t, cycle_t)
+                        u_preds.append(u_pred.item())
+                
+                # Revert model to eval mode
+                model.eval()
+                
+                u_pred_val = np.mean(u_preds) * soh_range + soh_min
                 
                 cell_cycles.append(cycle_idx + 1)
                 cell_soh_true.append(soh)
