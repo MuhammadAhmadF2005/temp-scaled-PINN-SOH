@@ -28,7 +28,7 @@ Email: u2024545@giki.edu.pk, u2024335@giki.edu.pk
 \maketitle
     
 \begin{abstract}
-Accurate state-of-health (SOH) estimation is essential for the safe and reliable operation of lithium-ion batteries. SOH is defined as the ratio of current capacity to nominal capacity, with end-of-life typically set at 80\%. Physics-informed neural networks (PINNs) have recently emerged as a powerful method that combines data based predictions with knowledge of how batteries age. However, most existing PINN-based approaches treat the cycle number as a linear measure of aging while ignoring the effect of temperature on the rate of degradation. In this work, we introduce a simple yet effective modification: scaling the cycle number using the Arrhenius equation to account for the effect of temperature on the aging time. This transformation is embedded directly into the PINN forward pass as a learnable activation energy parameter. We validate our approach on the TJU NCA battery dataset, which includes cells cycled at 25\textdegree C, 35\textdegree C, and 45\textdegree C. Training is performed on 25\textdegree C and 45\textdegree C data, with 35\textdegree C held out for testing. Compared to a standard PINN without temperature scaling, our proposed Arrhenius-scaling PINN reduces the holdout test MSE from 5986.26 to 674.26~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2} (an 88.7\% reduction) and improves the R\textsuperscript{2} from $-1.760$ to $0.689$. On the in-distribution random split, the proposed model improves R\textsuperscript{2} from 0.953 to 0.980 and reduces MSE by 57.8\%. The learnable activation energy converges to approximately 48.5~kJ/mol, which is consistent with reported growth kinetics of the solid-electrolyte interphase (SEI). These results indicate that incorporating Arrhenius temporal scaling can improve the robustness and generalization capability of PINN-based battery prognostics.
+Accurate state-of-health (SOH) estimation is essential for the safe and reliable operation of lithium-ion batteries. SOH is defined as the ratio of current capacity to nominal capacity, with end-of-life typically set at 80\%. Physics-informed neural networks (PINNs) have recently emerged as a powerful method that combines data based predictions with knowledge of how batteries age. However, most existing PINN-based approaches treat the cycle number as a linear measure of aging while ignoring the effect of temperature on the rate of degradation. In this work, we introduce a simple yet effective modification: scaling the cycle number using the Arrhenius equation to account for the effect of temperature on the aging time. This transformation is embedded directly into the PINN forward pass as a learnable activation energy parameter. We validate our approach on the TJU NCA battery dataset, which includes cells cycled at 25\textdegree C, 35\textdegree C, and 45\textdegree C. Training is performed on 25\textdegree C and 45\textdegree C data, with 35\textdegree C held out for testing. Compared to a standard PINN without temperature scaling, our proposed Arrhenius-scaling PINN reduces the holdout test MSE from 1123.71 to 254.64~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2} (a 77.3\% reduction) and improves the R\textsuperscript{2} from $0.471$ to $0.880$. On the in-distribution random split, the proposed model improves R\textsuperscript{2} from 0.928 to 0.987 and reduces MSE by 82.1\%. The learnable activation energy converges to approximately 48.5--50.5~kJ/mol, which is consistent with reported growth kinetics of the solid-electrolyte interphase (SEI). These results indicate that incorporating Arrhenius temporal scaling can improve the robustness and generalization capability of PINN-based battery prognostics.
 \end{abstract}
 
 \section{Introduction}
@@ -137,7 +137,7 @@ For the training pipeline, 10\% of the data was partitioned for validation. This
 We evaluate both the baseline PINN (no temperature scaling) and the proposed Arrhenius PINN on two tasks: (1) in-distribution performance using a random split that mixes all temperatures (25\textdegree C, 35\textdegree C, 45\textdegree C), and (2) out-of-distribution generalization on the held-out 35\textdegree C temperature set. All metrics are computed on the original, unnormalized capacity scale (mA\textperiodcentered h) to ensure physical interpretability.
 
 \subsection{In-Distribution Performance (Random Split)}
-Table~\ref{tab:indist} compares the two models on the random split test set. The proposed Arrhenius PINN achieves a substantially lower MSE (633.19 vs. 1500.67~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}) and a higher R\textsuperscript{2} (0.980 vs. 0.953), indicating a better overall fit. The MAE is also lower (18.40 vs. 27.42~mA\textperiodcentered h), and the RMSE improves from 38.74 to 25.16~mA\textperiodcentered h. Overall, the relative improvement in MSE is approximately 57.8\%.
+Table~\ref{tab:indist} compares the two models on the random split test set. The proposed Arrhenius PINN achieves a substantially lower MSE (408.46 vs. 2275.75~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}) and a higher R\textsuperscript{2} (0.987 vs. 0.928), indicating a better overall fit. The MAE is also lower (14.52 vs. 32.84~mA\textperiodcentered h), and the RMSE improves from 47.70 to 20.21~mA\textperiodcentered h. Overall, the relative improvement in MSE is approximately 82.1\%.
 
 \begin{table*}[!t]
 \centering
@@ -147,8 +147,8 @@ Table~\ref{tab:indist} compares the two models on the random split test set. The
 \toprule
 Model & MSE (mA\textperiodcentered h)\textsuperscript{2} & MAE (mA\textperiodcentered h) & RMSE (mA\textperiodcentered h) & R\textsuperscript{2} \\
 \midrule
-Baseline PINN (no scaling) & 1500.67 & 27.42 & 38.74 & 0.953 \\
-Proposed PINN (Arrhenius scaling) & \textbf{633.19} & \textbf{18.40} & \textbf{25.16} & \textbf{0.980} \\
+Baseline PINN (no scaling) & 2275.75 & 32.84 & 47.70 & 0.928 \\
+Proposed PINN (Arrhenius scaling) & \textbf{408.46} & \textbf{14.52} & \textbf{20.21} & \textbf{0.987} \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -161,69 +161,47 @@ Proposed PINN (Arrhenius scaling) & \textbf{633.19} & \textbf{18.40} & \textbf{2
 \toprule
 Model & MSE (mA\textperiodcentered h)\textsuperscript{2} & MAE (mA\textperiodcentered h) & RMSE (mA\textperiodcentered h) & R\textsuperscript{2} \\
 \midrule
-Baseline PINN (no scaling) & 5986.26 & 73.47 & 77.37 & $-1.760$ \\
-Proposed PINN (Arrhenius scaling) & \textbf{674.26} & \textbf{21.24} & \textbf{25.97} & \textbf{0.689} \\
+Baseline PINN (no scaling) & 1123.71 & 26.40 & 33.52 & 0.471 \\
+Proposed PINN (Arrhenius scaling) & \textbf{254.64} & \textbf{13.83} & \textbf{15.96} & \textbf{0.880} \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsection{Out-of-Distribution Generalization (35\textdegree C Holdout)}
-Table~\ref{tab:ood} reports performance on the 35\textdegree C cells, which were completely unseen during training. The proposed model achieves a dramatically higher R\textsuperscript{2} (0.689 vs. $-1.760$) and a substantially lower MSE (674.26 vs. 5986.26~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}), MAE (21.24 vs. 73.47~mA\textperiodcentered h), and RMSE (25.97 vs. 77.37~mA\textperiodcentered h). The negative R\textsuperscript{2} of the baseline indicates that, without temperature scaling, the model performs worse than simply predicting the mean SOH for the unseen temperature. In contrast, the proposed Arrhenius-scaled PINN explains 68.9\% of the variance, demonstrating that the temperature-dependent temporal scaling is essential for cross-temperature generalization.
+Table~\ref{tab:ood} reports performance on the 35\textdegree C cells, which were completely unseen during training. The proposed model achieves a dramatically higher R\textsuperscript{2} (0.880 vs. $0.471$) and a substantially lower MSE (254.64 vs. 1123.71~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}), MAE (13.83 vs. 26.40~mA\textperiodcentered h), and RMSE (15.96 vs. 33.52~mA\textperiodcentered h). In contrast, the proposed Arrhenius-scaled PINN explains 88.0\% of the variance, demonstrating that the temperature-dependent temporal scaling is essential for cross-temperature generalization.
 
 \subsection{Qualitative SOH Trajectory Predictions}
-Figures~\ref{fig:holdout_baseline} and~\ref{fig:holdout_proposed} show the predicted SOH trajectories for three representative test cells from the 35\textdegree C holdout set. The baseline PINN without scaling exhibits large deviations from the true degradation curve, while the proposed Arrhenius-scaled PINN captures the degradation trend more faithfully.
+Figures~\ref{fig:holdout_baseline} and~\ref{fig:holdout_proposed} show the predicted SOH trajectory for a representative test cell (Cell 3) from the 35\textdegree C holdout set. The baseline PINN without scaling exhibits large deviations from the true degradation curve, while the proposed Arrhenius-scaled PINN captures the degradation trend more faithfully.
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_unscaled/soh_CY35-05_1-num1.csv.png}
-  \caption{Cell 1}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_unscaled/soh_CY35-05_1-num2.csv.png}
-  \caption{Cell 2}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_unscaled/soh_CY35-05_1-num3.csv.png}
-  \caption{Cell 3}
-\end{subfigure}
-\caption{Holdout (35\textdegree C) predictions -- baseline PINN (no scaling).}
+\includegraphics[width=0.85\linewidth]{plots/plots_holdout_unscaled/soh_CY35-05_1-num3.csv.png}
+\caption{Holdout (35\textdegree C) prediction -- baseline PINN (no scaling).}
 \label{fig:holdout_baseline}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[!t]
+\begin{figure}[!t]
 \centering
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_scaled/soh_CY35-05_1-num1.csv.png}
-  \caption{Cell 1}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_scaled/soh_CY35-05_1-num2.csv.png}
-  \caption{Cell 2}
-\end{subfigure}
-\begin{subfigure}[b]{0.32\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_holdout_scaled/soh_CY35-05_1-num3.csv.png}
-  \caption{Cell 3}
-\end{subfigure}
-\caption{Holdout (35\textdegree C) predictions -- proposed Arrhenius-scaled PINN.}
+\includegraphics[width=0.85\linewidth]{plots/plots_holdout_scaled/soh_CY35-05_1-num3.csv.png}
+\caption{Holdout (35\textdegree C) prediction -- proposed Arrhenius-scaled PINN.}
 \label{fig:holdout_proposed}
-\end{figure*}
+\end{figure}
 
 Figures~\ref{fig:random_baseline} and~\ref{fig:random_proposed} show four representative test cells from the random split (in-distribution), covering cells at 25\textdegree C and 45\textdegree C. The proposed model consistently tracks the true SOH more accurately, with less deviation in both early and late cycles.
 
 \begin{figure*}[!t]
 \centering
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY25-05_1-num4.csv.png}
-  \caption{CY25-05 Cell 4 (25\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY25-05_1-num6.csv.png}
+  \caption{CY25-05 Cell 6 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY25-1_1-num6.csv.png}
-  \caption{CY25-1 Cell 6 (25\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY25-1_1-num8.csv.png}
+  \caption{CY25-1 Cell 8 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY35-05_1-num1.csv.png}
-  \caption{CY35-05 Cell 1 (35\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY25-05_1-num8.csv.png}
+  \caption{CY25-05 Cell 8 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
   \includegraphics[width=\linewidth]{plots/plots_random_unscaled/soh_CY45-05_1-num5.csv.png}
@@ -236,16 +214,16 @@ Figures~\ref{fig:random_baseline} and~\ref{fig:random_proposed} show four repres
 \begin{figure*}[!t]
 \centering
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY25-05_1-num4.csv.png}
-  \caption{CY25-05 Cell 4 (25\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY25-05_1-num6.csv.png}
+  \caption{CY25-05 Cell 6 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY25-1_1-num6.csv.png}
-  \caption{CY25-1 Cell 6 (25\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY25-1_1-num8.csv.png}
+  \caption{CY25-1 Cell 8 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
-  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY35-05_1-num1.csv.png}
-  \caption{CY35-05 Cell 1 (35\textdegree C)}
+  \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY25-05_1-num8.csv.png}
+  \caption{CY25-05 Cell 8 (25\textdegree C)}
 \end{subfigure}
 \begin{subfigure}[b]{0.48\linewidth}
   \includegraphics[width=\linewidth]{plots/plots_random_scaled/soh_CY45-05_1-num5.csv.png}
@@ -256,7 +234,7 @@ Figures~\ref{fig:random_baseline} and~\ref{fig:random_proposed} show four repres
 \end{figure*}
 
 \section{Conclusion}
-We have presented a simple yet physically meaningful enhancement to the battery PINN framework: replacing raw cycle number with an Arrhenius-scaled equivalent aging time, where the activation energy is treated as a learnable parameter. This modification embeds the well-known temperature acceleration of battery degradation directly into the model's temporal coordinate. On the TJU NCA dataset, the proposed method substantially improves both in-distribution and out-of-distribution performance. For the in-distribution random split, R\textsuperscript{2} increases from 0.953 to 0.980 while MSE decreases from 1500.67 to 633.19~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}. For the challenging out-of-distribution 35\textdegree C holdout test, the proposed model improves R\textsuperscript{2} from $-1.760$ to $0.689$ and reduces RMSE from 77.37 to 25.97~mA\textperiodcentered h, an improvement of 66.4\%. The learned activation energy converges to approximately 48.5--50.5~kJ/mol, which is physically plausible and consistent with reported SEI-growth kinetics.
+We have presented a simple yet physically meaningful enhancement to the battery PINN framework: replacing raw cycle number with an Arrhenius-scaled equivalent aging time, where the activation energy is treated as a learnable parameter. This modification embeds the well-known temperature acceleration of battery degradation directly into the model's temporal coordinate. On the TJU NCA dataset, the proposed method substantially improves both in-distribution and out-of-distribution performance. For the in-distribution random split, R\textsuperscript{2} increases from 0.928 to 0.987 while MSE decreases from 2275.75 to 408.46~mA\textsuperscript{2}\textperiodcentered h\textsuperscript{2}. For the challenging out-of-distribution 35\textdegree C holdout test, the proposed model improves R\textsuperscript{2} from $0.471$ to $0.880$ and reduces RMSE from 33.52 to 15.96~mA\textperiodcentered h, an improvement of 52.4\%. The learned activation energy converges to approximately 48.5--50.5~kJ/mol, which is physically plausible and consistent with reported SEI-growth kinetics.
 
 \section{Code Availability}
 The source code used in this work is publicly available at:
