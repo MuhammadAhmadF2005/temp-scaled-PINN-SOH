@@ -121,7 +121,9 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             
             cycles = df['cycle number'].unique()
             baseline_soh = None
-            valid_cycle_idx = 0
+            
+            # Step 1: Collect raw valid cycles
+            valid_raw_cycles = []
             for cycle_num in sorted(cycles):
                 df_c = df[df['cycle number'] == cycle_num]
                 soh = df_c['Q discharge/mA.h'].max()
@@ -138,17 +140,30 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
                 if soh < baseline_soh * 0.5:
                     continue
                 
-                if is_training and max_train_cycles is not None and valid_cycle_idx >= max_train_cycles:
-                    break
+                valid_raw_cycles.append({
+                    'df_c': df_c,
+                    'soh': soh
+                })
+            
+            if not valid_raw_cycles:
+                continue
                 
-                features = compute_features(df_c)
+            # Step 2: Smooth valid SOH values using a rolling median filter
+            soh_raw_vals = [c['soh'] for c in valid_raw_cycles]
+            s_series = pd.Series(soh_raw_vals)
+            soh_smoothed = s_series.rolling(window=5, center=True, min_periods=1).median().values
+            
+            # Step 3: Compute features and build data list, applying max_train_cycles if training
+            for idx, c in enumerate(valid_raw_cycles):
+                if is_training and max_train_cycles is not None and idx >= max_train_cycles:
+                    break
+                features = compute_features(c['df_c'])
                 data_list.append({
                     'features': features,
-                    'soh': soh,
+                    'soh': soh_smoothed[idx],
                     'temperature': temp,
-                    'cycle': valid_cycle_idx + 1 
+                    'cycle': idx + 1
                 })
-                valid_cycle_idx += 1
         return data_list
 
     print(f"Processing training data ({len(train_files)} files)...")

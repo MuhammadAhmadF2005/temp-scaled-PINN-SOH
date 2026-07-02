@@ -34,8 +34,9 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
         cell_soh_pred = []
         cell_t_arr = []
         
+        # Step 1: Extract valid cycles
+        valid_raw_cycles = []
         baseline_soh = None
-        valid_cycle_idx = 0
         for cycle_num in cycles:
             df_c = df[df['cycle number'] == cycle_num]
             soh = df_c['Q discharge/mA.h'].max()
@@ -52,14 +53,29 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
             if soh < baseline_soh * 0.5:
                 continue
             
-            features = compute_features(df_c)
+            valid_raw_cycles.append({
+                'df_c': df_c,
+                'soh': soh
+            })
+            
+        if not valid_raw_cycles:
+            continue
+            
+        # Step 2: Smooth valid SOH using rolling median filter
+        soh_raw_vals = [c['soh'] for c in valid_raw_cycles]
+        s_series = pd.Series(soh_raw_vals)
+        soh_smoothed = s_series.rolling(window=5, center=True, min_periods=1).median().values
+        
+        # Step 3: Run model predictions and record data
+        for idx, c in enumerate(valid_raw_cycles):
+            features = compute_features(c['df_c'])
             # Normalize
             feat_norm = 2 * ((features - f_min) / f_range) - 1.0
             
             # To tensor
             x_t = torch.tensor(feat_norm, dtype=torch.float32).to(device)
             temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
-            cycle_t = torch.tensor([[valid_cycle_idx + 1]], dtype=torch.float32).to(device)
+            cycle_t = torch.tensor([[idx + 1]], dtype=torch.float32).to(device)
             
             # Enable dropout for Monte Carlo sampling
             for m in model.modules():
@@ -78,11 +94,10 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
             
             u_pred_val = np.mean(u_preds) * soh_range + soh_min
             
-            cell_cycles.append(valid_cycle_idx + 1)
-            cell_soh_true.append(soh)
+            cell_cycles.append(idx + 1)
+            cell_soh_true.append(soh_smoothed[idx])
             cell_soh_pred.append(u_pred_val)
             cell_t_arr.append(t_arr.item())
-            valid_cycle_idx += 1
         
         if temp not in temp_batches:
             temp_batches[temp] = []
