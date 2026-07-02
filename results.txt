@@ -1,24 +1,24 @@
 --- No Scaling ---
-Test MSE Loss: 1123.707820
-Test MAE Loss: 26.398075
-Test RMSE Loss: 33.521751
-Test R² Score: 0.471327
+Test MSE Loss: 1927.032431
+Test MAE Loss: 37.783796
+Test RMSE Loss: 43.897978
+Test R² Score: 0.945790
 
 --- Scaling ---
-Test MSE Loss: 254.642988
-Test MAE Loss: 13.832750
-Test RMSE Loss: 15.957537
-Test R² Score: 0.880198
+Test MSE Loss: 9020.543202
+Test MAE Loss: 78.102787
+Test RMSE Loss: 94.976540
+Test R² Score: 0.746241
 
 --- No Scaling ---
-Test MSE Loss: 2275.748487
-Test MAE Loss: 32.839244
-Test RMSE Loss: 47.704806
-Test R² Score: 0.928084
+Test MSE Loss: 2561.541360
+Test MAE Loss: 36.059829
+Test RMSE Loss: 50.611672
+Test R² Score: 0.939039
 
 --- Scaling ---
-Test MSE Loss: 408.457340
-Test MAE Loss: 14.516388
-Test RMSE Loss: 20.210328
-Test R² Score: 0.987092
+Test MSE Loss: 2546.334010
+Test MAE Loss: 36.250777
+Test RMSE Loss: 50.461213
+Test R² Score: 0.939400
 
