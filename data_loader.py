@@ -120,21 +120,35 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             df = pd.read_csv(file)
             
             cycles = df['cycle number'].unique()
-            for cycle_idx, cycle_num in enumerate(sorted(cycles)):
-                if is_training and max_train_cycles is not None and cycle_idx >= max_train_cycles:
-                    break
-                
+            baseline_soh = None
+            valid_cycle_idx = 0
+            for cycle_num in sorted(cycles):
                 df_c = df[df['cycle number'] == cycle_num]
                 soh = df_c['Q discharge/mA.h'].max()
                 
-                if soh > 10.0:
-                    features = compute_features(df_c)
-                    data_list.append({
-                        'features': features,
-                        'soh': soh,
-                        'temperature': temp,
-                        'cycle': cycle_idx + 1 
-                    })
+                if soh <= 10.0:
+                    continue
+                
+                # Set baseline from first valid cycle
+                if baseline_soh is None:
+                    baseline_soh = soh
+                
+                # Skip anomalous cycles (rest/diagnostic) whose capacity
+                # drops below 50% of the first cycle's capacity
+                if soh < baseline_soh * 0.5:
+                    continue
+                
+                if is_training and max_train_cycles is not None and valid_cycle_idx >= max_train_cycles:
+                    break
+                
+                features = compute_features(df_c)
+                data_list.append({
+                    'features': features,
+                    'soh': soh,
+                    'temperature': temp,
+                    'cycle': valid_cycle_idx + 1 
+                })
+                valid_cycle_idx += 1
         return data_list
 
     print(f"Processing training data ({len(train_files)} files)...")

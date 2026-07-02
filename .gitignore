@@ -1,8 +1,9 @@
 venv/
 new_venv/
 *__pycache__
-# Dataset_1_NCA_battery/
+*Dataset_1_NCA_battery
 *best_model.pth
+*report.tex
 stuff/
 PINN4SOH/
 plots*/

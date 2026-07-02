@@ -34,41 +34,55 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
         cell_soh_pred = []
         cell_t_arr = []
         
-        for cycle_idx, cycle_num in enumerate(cycles):
+        baseline_soh = None
+        valid_cycle_idx = 0
+        for cycle_num in cycles:
             df_c = df[df['cycle number'] == cycle_num]
             soh = df_c['Q discharge/mA.h'].max()
             
-            if soh > 10.0:
-                features = compute_features(df_c)
-                # Normalize
-                feat_norm = 2 * ((features - f_min) / f_range) - 1.0
-                
-                # To tensor
-                x_t = torch.tensor(feat_norm, dtype=torch.float32).to(device)
-                temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
-                cycle_t = torch.tensor([[cycle_idx + 1]], dtype=torch.float32).to(device)
-                
-                # Enable dropout for Monte Carlo sampling
-                for m in model.modules():
-                    if m.__class__.__name__.startswith('Dropout'):
-                        m.train()
-                        
-                n_mc_samples = 30
-                u_preds = []
-                with torch.no_grad():
-                    for _ in range(n_mc_samples):
-                        u_pred, t_arr = model(x_t, temp_t, cycle_t)
-                        u_preds.append(u_pred.item())
-                
-                # Revert model to eval mode
-                model.eval()
-                
-                u_pred_val = np.mean(u_preds) * soh_range + soh_min
-                
-                cell_cycles.append(cycle_idx + 1)
-                cell_soh_true.append(soh)
-                cell_soh_pred.append(u_pred_val)
-                cell_t_arr.append(t_arr.item())
+            if soh <= 10.0:
+                continue
+            
+            # Set baseline from first valid cycle
+            if baseline_soh is None:
+                baseline_soh = soh
+            
+            # Skip anomalous cycles (rest/diagnostic) whose capacity
+            # drops below 50% of the first cycle's capacity
+            if soh < baseline_soh * 0.5:
+                continue
+            
+            features = compute_features(df_c)
+            # Normalize
+            feat_norm = 2 * ((features - f_min) / f_range) - 1.0
+            
+            # To tensor
+            x_t = torch.tensor(feat_norm, dtype=torch.float32).to(device)
+            temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
+            cycle_t = torch.tensor([[valid_cycle_idx + 1]], dtype=torch.float32).to(device)
+            
+            # Enable dropout for Monte Carlo sampling
+            for m in model.modules():
+                if m.__class__.__name__.startswith('Dropout'):
+                    m.train()
+                    
+            n_mc_samples = 30
+            u_preds = []
+            with torch.no_grad():
+                for _ in range(n_mc_samples):
+                    u_pred, t_arr = model(x_t, temp_t, cycle_t)
+                    u_preds.append(u_pred.item())
+            
+            # Revert model to eval mode
+            model.eval()
+            
+            u_pred_val = np.mean(u_preds) * soh_range + soh_min
+            
+            cell_cycles.append(valid_cycle_idx + 1)
+            cell_soh_true.append(soh)
+            cell_soh_pred.append(u_pred_val)
+            cell_t_arr.append(t_arr.item())
+            valid_cycle_idx += 1
         
         if temp not in temp_batches:
             temp_batches[temp] = []
