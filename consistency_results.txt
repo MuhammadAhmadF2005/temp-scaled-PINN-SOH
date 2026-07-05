@@ -1,0 +1,61 @@
+======================================================================
+CONSISTENCY CHECK - Multiple Runs of Battery PINN SOH Model
+======================================================================
+
+--- Holdout 35C - No Scaling ---
+Reference:  MSE=5986.26  MAE=73.47  RMSE=77.37  R2=-1.760
+  Run 1:   MSE=3287.1629  MAE=49.3624  RMSE=57.3338  R2=0.907528  Ea=52.00
+  Run 2:   MSE=1295.6095  MAE=30.6040  RMSE=35.9946  R2=0.963553  Ea=52.00
+  Run 3:   MSE=5903.9347  MAE=66.1786  RMSE=76.8371  R2=0.833915  Ea=52.00
+  Mean:    MSE=3495.5690  MAE=48.7150  RMSE=56.7218  R2=0.901665  Ea=52.00
+  Std:     MSE=1887.1036  MAE=14.5305  RMSE=16.6795  R2=0.053087  Ea=0.00
+
+--- Holdout 35C - Scaling ---
+Reference:  MSE=674.26  MAE=21.24  RMSE=25.97  R2=0.689
+  Run 1:   MSE=14204.5638  MAE=103.6298  RMSE=119.1829  R2=0.600409  Ea=49.58
+  Run 2:   MSE=2910.4468  MAE=46.0638  RMSE=53.9486  R2=0.918126  Ea=42.27
+  Run 3:   MSE=6165.9848  MAE=66.9181  RMSE=78.5238  R2=0.826543  Ea=50.32
+  Mean:    MSE=7760.3318  MAE=72.2039  RMSE=83.8851  R2=0.781693  Ea=47.39
+  Std:     MSE=4746.6287  MAE=23.7966  RMSE=26.9003  R2=0.133528  Ea=3.63
+
+--- Random Split - No Scaling ---
+Reference:  MSE=1500.67  MAE=27.42  RMSE=38.74  R2=0.953
+  Run 1:   MSE=3226.8862  MAE=42.5163  RMSE=56.8057  R2=0.923204  Ea=52.00
+  Run 2:   MSE=1994.8823  MAE=35.0100  RMSE=44.6641  R2=0.952524  Ea=52.00
+  Run 3:   MSE=2496.7669  MAE=35.5874  RMSE=49.9677  R2=0.940580  Ea=52.00
+  Mean:    MSE=2572.8451  MAE=37.7046  RMSE=50.4792  R2=0.938769  Ea=52.00
+  Std:     MSE=505.8322  MAE=3.4106  RMSE=4.9700  R2=0.012038  Ea=0.00
+
+--- Random Split - Scaling ---
+Reference:  MSE=633.19  MAE=18.40  RMSE=25.16  R2=0.980
+  Run 1:   MSE=2144.2855  MAE=30.9013  RMSE=46.3064  R2=0.948969  Ea=46.01
+  Run 2:   MSE=2547.4115  MAE=36.6771  RMSE=50.4719  R2=0.939375  Ea=45.98
+  Run 3:   MSE=2239.0446  MAE=33.2681  RMSE=47.3185  R2=0.946714  Ea=46.01
+  Mean:    MSE=2310.2472  MAE=33.6155  RMSE=48.0323  R2=0.945019  Ea=46.00
+  Std:     MSE=172.1046  MAE=2.3707  RMSE=1.7739  R2=0.004096  Ea=0.01
+
+
+======================================================================
+OVERALL CONSISTENCY SUMMARY
+======================================================================
+
+Holdout 35C - No Scaling:
+  R2 = 0.9017 +/- 0.0531  (ref: -1.760)
+  RMSE = 56.72 +/- 16.68  (ref: 77.37)
+  Status: HIGH VARIANCE
+
+Holdout 35C - Scaling:
+  R2 = 0.7817 +/- 0.1335  (ref: 0.689)
+  RMSE = 83.89 +/- 26.90  (ref: 25.97)
+  Status: HIGH VARIANCE
+
+Random Split - No Scaling:
+  R2 = 0.9388 +/- 0.0120  (ref: 0.953)
+  RMSE = 50.48 +/- 4.97  (ref: 38.74)
+  Status: CONSISTENT
+
+Random Split - Scaling:
+  R2 = 0.9450 +/- 0.0041  (ref: 0.980)
+  RMSE = 48.03 +/- 1.77  (ref: 25.16)
+  Status: CONSISTENT
+
