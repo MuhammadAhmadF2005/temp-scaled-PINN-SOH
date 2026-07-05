@@ -7,16 +7,33 @@ import matplotlib.pyplot as plt
 from data_loader import prepare_dataset, extract_temperature, compute_features
 from model import BatteryPINN
 
-def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
-    print("Preparing dataset (loading files)...")
+def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
+    """
+    Visualize SOH predictions using snapshot ensemble + MC Dropout.
+    
+    Args:
+        data_dir: Path to dataset directory
+        models: List of BatteryPINN models (snapshot ensemble) or a single model
+        plot_dir: Directory to save plots
+        holdout_temp: Temperature held out for testing (or None for random split)
+    """
+    # Handle both single model and list of models for backward compatibility
+    if not isinstance(models, list):
+        models = [models]
+    
+    print(f"Preparing dataset (loading files)...")
     train_data, val_data, test_data, train_files, val_files, test_files, f_min, f_range, soh_min, soh_range = prepare_dataset(data_dir, holdout_temp=holdout_temp, max_train_cycles=None)
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
+    print(f"Using {len(models)} snapshot model(s) for ensemble prediction")
     
-    model.eval()
+    for m in models:
+        m.eval()
     
     os.makedirs(plot_dir, exist_ok=True)
+    
+    n_mc_samples = 30
     
     # 1. SOH Trajectories
     print("Plotting SOH trajectories for test cells...")
@@ -77,27 +94,33 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
             temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
             cycle_t = torch.tensor([[idx + 1]], dtype=torch.float32).to(device)
             
-            # Enable dropout for Monte Carlo sampling
-            for m in model.modules():
-                if m.__class__.__name__.startswith('Dropout'):
-                    m.train()
-                    
-            n_mc_samples = 30
-            u_preds = []
-            with torch.no_grad():
-                for _ in range(n_mc_samples):
-                    u_pred, t_arr = model(x_t, temp_t, cycle_t)
-                    u_preds.append(u_pred.item())
+            # Ensemble + MC Dropout predictions
+            all_preds = []
+            last_t_arr = None
             
-            # Revert model to eval mode
-            model.eval()
+            for snap_model in models:
+                # Enable dropout for Monte Carlo sampling
+                snap_model.eval()
+                for m in snap_model.modules():
+                    if m.__class__.__name__.startswith('Dropout'):
+                        m.train()
+                
+                with torch.no_grad():
+                    for _ in range(n_mc_samples):
+                        u_pred, t_arr = snap_model(x_t, temp_t, cycle_t)
+                        all_preds.append(u_pred.item())
+                        last_t_arr = t_arr.item()
+                
+                # Revert model to eval mode
+                snap_model.eval()
             
-            u_pred_val = np.mean(u_preds) * soh_range + soh_min
+            # Average across all snapshots × MC samples
+            u_pred_val = np.mean(all_preds) * soh_range + soh_min
             
             cell_cycles.append(idx + 1)
             cell_soh_true.append(soh_smoothed[idx])
             cell_soh_pred.append(u_pred_val)
-            cell_t_arr.append(t_arr.item())
+            cell_t_arr.append(last_t_arr)
         
         if temp not in temp_batches:
             temp_batches[temp] = []
@@ -137,4 +160,3 @@ def visualize(data_dir, model, plot_dir='plots_scaled', holdout_temp=None):
     plt.tight_layout()
     plt.savefig(f'{plot_dir}/thermal_age_vs_cycle.png')
     plt.close()
-
