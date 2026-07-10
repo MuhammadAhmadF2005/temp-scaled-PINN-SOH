@@ -119,13 +119,13 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             temp = extract_temperature(os.path.basename(file))
             df = pd.read_csv(file)
             
-            cycles = df['cycle number'].unique()
+            grouped = df.groupby('cycle number')
             baseline_soh = None
             
             # Step 1: Collect raw valid cycles
             valid_raw_cycles = []
-            for cycle_num in sorted(cycles):
-                df_c = df[df['cycle number'] == cycle_num]
+            for cycle_num in sorted(grouped.groups.keys()):
+                df_c = grouped.get_group(cycle_num)
                 soh = df_c['Q discharge/mA.h'].max()
                 
                 if soh <= 10.0:
