@@ -68,12 +68,18 @@ python train.py --plot_dir plots_random_scaled
 ---
 
 ## Experimental Results
-Models were evaluated on a holdout test set cycled at 35°C (completely unseen during training). The table below showcases the performance improvements gained by integrating Arrhenius scaling and rolling median data smoothing:
+Models were evaluated under two protocols: (1) in-distribution random split across all temperatures, and (2) out-of-distribution holdout with 35°C completely unseen during training.
 
-### Holdout Test Set (35°C Unseen)
+### In-Distribution (Random Split)
 | Configuration | MSE ($mA^2 \cdot h^2$) | MAE ($mA \cdot h$) | RMSE ($mA \cdot h$) | $R^2$ Score |
 | :--- | :---: | :---: | :---: | :---: |
-| **Baseline (No Scaling)** | 1123.71 | 26.40 | 33.52 | 0.471 |
-| **Proposed (Arrhenius Scaling)** | **254.64** | **13.83** | **15.96** | **0.880** |
+| **Baseline (No Scaling)** | 1500.67 | 27.42 | 38.74 | 0.953 |
+| **Proposed (Arrhenius Scaling)** | **633.19** | **18.40** | **25.16** | **0.980** |
 
-Integrating Arrhenius temporal scaling reduced holdout test MSE by **77.3%** and raised the $R^2$ score to **0.880**, validating the physical model's ability to extrapolate degradation across temperatures.
+### Out-of-Distribution (35°C Holdout)
+| Configuration | MSE ($mA^2 \cdot h^2$) | MAE ($mA \cdot h$) | RMSE ($mA \cdot h$) | $R^2$ Score |
+| :--- | :---: | :---: | :---: | :---: |
+| **Baseline (No Scaling)** | 5986.26 | 73.47 | 77.37 | −1.760 |
+| **Proposed (Arrhenius Scaling)** | **674.26** | **21.24** | **25.97** | **0.689** |
+
+Integrating Arrhenius temporal scaling reduced holdout test MSE by **88.7%** and improved the $R^2$ score from **−1.760** to **0.689**, validating the physical model's ability to extrapolate degradation across temperatures.
