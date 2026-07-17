@@ -146,3 +146,5 @@ def compute_pinn_losses(model, x, temp_c, cycle, true_u, alpha=0.01, beta=0.1):
     loss = mse_loss + alpha * pde_loss + beta * mono_loss
     
     return loss, mse_loss, pde_loss, mono_loss
+
+##note: this is a custom model for SOH prediction using PINNs. 

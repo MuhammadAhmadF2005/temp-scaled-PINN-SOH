@@ -160,3 +160,5 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
     plt.tight_layout()
     plt.savefig(f'{plot_dir}/thermal_age_vs_cycle.png')
     plt.close()
+
+#python file for the purspose of visualizing plots...

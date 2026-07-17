@@ -219,3 +219,6 @@ def get_dataloaders(data_dir, holdout_temp=None, batch_size=64, max_train_cycles
     test_loader = DataLoader(BatterySOHDataset(test_data), batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     
     return train_loader, val_loader, test_loader, soh_min, soh_range
+
+##note: this is a customer data loading pipeline for the purpose of loading, cleaning, preprocessing data
+##before applying a model as part of safe data science work ethics.

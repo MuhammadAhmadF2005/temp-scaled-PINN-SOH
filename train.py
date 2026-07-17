@@ -237,3 +237,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     train_model('Dataset_1_NCA_battery', epochs=args.epochs, batch_size=args.batch_size, patience=args.patience, use_scaling=not args.no_scaling, holdout_temp=args.holdout_temp, plot_dir=args.plot_dir)
+
+#this is our custom train file for SOH prediction using PINNs. 
