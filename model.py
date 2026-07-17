@@ -105,7 +105,7 @@ class BatteryPINN(nn.Module):
         u = self.F_net(t_arr, x)
         return u, t_arr
 
-def compute_pinn_losses(model, x, temp_c, cycle, true_u, alpha=0.1, beta=0.1):
+def compute_pinn_losses(model, x, temp_c, cycle, true_u, alpha=0.01, beta=0.1):
     # Ensure t_arr requires gradient
     t_arr = model.compute_t_arr(temp_c, cycle)
     # If t_arr is not a leaf but we need gradient w.r.t it:
