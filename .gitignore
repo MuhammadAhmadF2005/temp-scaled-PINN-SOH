@@ -8,4 +8,6 @@ PINN4SOH/
 plots.zip
 saad.tex
 report.tex
-
+consistency_checker
+consistency_check.py
+consistency_results.txt
