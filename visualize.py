@@ -17,7 +17,7 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
         plot_dir: Directory to save plots
         holdout_temp: Temperature held out for testing (or None for random split)
     """
-    # Handle both single model and list of models for backward compatibility
+
     if not isinstance(models, list):
         models = [models]
     
@@ -35,9 +35,9 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
     
     n_mc_samples = 30
     
-    # 1. SOH Trajectories
+
     print("Plotting SOH trajectories for test cells...")
-    temp_batches = {}  # For t_arr plot
+    temp_batches = {}
     
     for file in test_files:
         temp = extract_temperature(os.path.basename(file))
@@ -51,7 +51,7 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
         cell_soh_pred = []
         cell_t_arr = []
         
-        # Step 1: Extract valid cycles
+
         valid_raw_cycles = []
         baseline_soh = None
         for cycle_num in cycles:
@@ -61,12 +61,12 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
             if soh <= 10.0:
                 continue
             
-            # Set baseline from first valid cycle
+
             if baseline_soh is None:
                 baseline_soh = soh
             
-            # Skip anomalous cycles (rest/diagnostic) whose capacity
-            # drops below 50% of the first cycle's capacity
+
+
             if soh < baseline_soh * 0.5:
                 continue
             
@@ -78,28 +78,28 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
         if not valid_raw_cycles:
             continue
             
-        # Step 2: Smooth valid SOH using rolling median filter
+
         soh_raw_vals = [c['soh'] for c in valid_raw_cycles]
         s_series = pd.Series(soh_raw_vals)
         soh_smoothed = s_series.rolling(window=5, center=True, min_periods=1).median().values
         
-        # Step 3: Run model predictions and record data
+
         for idx, c in enumerate(valid_raw_cycles):
             features = compute_features(c['df_c'])
-            # Normalize
+
             feat_norm = 2 * ((features - f_min) / f_range) - 1.0
             
-            # To tensor
+
             x_t = torch.tensor(feat_norm, dtype=torch.float32).to(device)
             temp_t = torch.tensor([[temp]], dtype=torch.float32).to(device)
             cycle_t = torch.tensor([[idx + 1]], dtype=torch.float32).to(device)
             
-            # Ensemble + MC Dropout predictions
+
             all_preds = []
             last_t_arr = None
             
             for snap_model in models:
-                # Enable dropout for Monte Carlo sampling
+
                 snap_model.eval()
                 for m in snap_model.modules():
                     if m.__class__.__name__.startswith('Dropout'):
@@ -111,10 +111,10 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
                         all_preds.append(u_pred.item())
                         last_t_arr = t_arr.item()
                 
-                # Revert model to eval mode
+
                 snap_model.eval()
             
-            # Average across all snapshots × MC samples
+
             u_pred_val = np.mean(all_preds) * soh_range + soh_min
             
             cell_cycles.append(idx + 1)
@@ -126,7 +126,7 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
             temp_batches[temp] = []
         temp_batches[temp].append((cell_cycles, cell_t_arr))
         
-        # Plot SOH
+
         plt.figure(figsize=(8, 5))
         plt.plot(cell_cycles, cell_soh_true, label='True SOH', color='black', linewidth=2)
         plt.plot(cell_cycles, cell_soh_pred, label='Predicted SOH', color='red', linestyle='dashed')
@@ -140,13 +140,13 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
         plt.savefig(f"{plot_dir}/soh_{safe_filename}.png")
         plt.close()
         
-    # 2. Thermal Age vs Cycle Number
+
     print("Plotting Thermal Age (t_arr) vs Cycle Number...")
     plt.figure(figsize=(8, 5))
     colors = ['r', 'g', 'b', 'c', 'm', 'y']
     c_idx = 0
     for temp, lst in temp_batches.items():
-        # Just plot the first cell of this temperature as representative
+
         if len(lst) > 0:
             c, t_arr = lst[0]
             plt.plot(c, t_arr, label=f'{temp}°C', color=colors[c_idx % len(colors)], linewidth=2)

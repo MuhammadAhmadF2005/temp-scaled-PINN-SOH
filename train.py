@@ -18,7 +18,7 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
     print(f"Initializing model (use_scaling={use_scaling})...")
     model = BatteryPINN(n_features=16, use_scaling=use_scaling).to(device)
     
-    # Differential learning rates: Ea gets 1e-2 (no weight decay), others get 1e-3 with L2 regularization
+
     ea_params = [p for n, p in model.named_parameters() if 'Ea' in n]
     other_params = [p for n, p in model.named_parameters() if 'Ea' not in n]
     
@@ -27,18 +27,18 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
         {'params': ea_params, 'lr': 1e-2, 'weight_decay': 0.0}
     ])
     
-    # Cosine Annealing with Warm Restarts: T_0=50 epochs, doubles each restart
-    # Restart schedule: epochs 50, 150, 350, (500+ would be next)
+
+
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=50, T_mult=2)
     
-    # SWA setup: starts averaging weights after epoch 200
+
     swa_model = AveragedModel(model)
     swa_start = 200
     swa_active = False
     
-    # Snapshot ensemble: save model at cosine restart convergence points
-    # With T_0=50, T_mult=2: restarts at epochs 50, 150, 350
-    # We save just before each restart (at the converged point)
+
+
+
     cosine_restart_epochs = set()
     T_cur = 50
     epoch_acc = 0
@@ -71,7 +71,7 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
             
             loss.backward()
             
-            # Gradient clipping to prevent gradient spikes from PDE/mono losses
+
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
             optimizer.step()
@@ -87,13 +87,13 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
         train_pde /= n_train
         train_mono /= n_train
         
-        # Step cosine annealing scheduler
+
         scheduler.step(epoch + 1)
         
         model.eval()
         val_loss = 0.0
                 
-        # We will compute full PINN validation loss using enable_grad()
+
         with torch.enable_grad():
             for features, soh, temp, cycle in val_loader:
                 features, soh, temp, cycle = features.to(device), soh.to(device), temp.to(device), cycle.to(device)
@@ -106,20 +106,20 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
         
         print(f"Epoch {epoch+1:03d} | Train Loss: {train_loss:.6f} [MSE:{train_mse:.6f} PDE:{train_pde:.6f} MONO:{train_mono:.6f}] | Val Loss: {val_loss:.6f} | Ea = {model.Ea.item():.2f}")
         
-        # SWA: start averaging after swa_start epochs
+
         if epoch + 1 >= swa_start:
             if not swa_active:
                 print(f"  --> SWA activated at epoch {epoch+1}")
                 swa_active = True
             swa_model.update_parameters(model)
         
-        # Snapshot: save model state at cosine restart convergence points
+
         if (epoch + 1) in cosine_restart_epochs:
             snapshot_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
             snapshots.append(snapshot_state)
             print(f"  --> Snapshot #{len(snapshots)} saved at epoch {epoch+1}")
         
-        # Early stopping based on validation loss
+
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             early_stop_counter = 0
@@ -133,23 +133,23 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
                 
     print("Training finished.")
     
-    # Finalize SWA model: update batch norm statistics
+
     if swa_active:
         print("Updating SWA batch norm statistics...")
-        # SWA model needs BN update with training data
+
         swa_model.to(device)
         torch.optim.swa_utils.update_bn(train_loader, swa_model, device=device)
-        # Add SWA model as a snapshot
+
         swa_state = {k: v.cpu().clone() for k, v in swa_model.module.state_dict().items()}
         snapshots.append(swa_state)
         print(f"  --> SWA model added as snapshot #{len(snapshots)}")
     
-    # Always include the best early-stopped model as a snapshot
+
     if best_model_state is not None:
         snapshots.append(best_model_state)
         print(f"  --> Best model added as snapshot #{len(snapshots)}")
     
-    # If no snapshots were collected (e.g. very early stopping), use best model
+
     if not snapshots and best_model_state is not None:
         snapshots = [best_model_state]
     
@@ -165,7 +165,7 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
         model.to(device)
         model.eval()
         
-        # MC Dropout: enable dropout during inference
+
         for m in model.modules():
             if isinstance(m, nn.Dropout):
                 m.train()
@@ -188,11 +188,11 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
                 all_soh_list.append(np.concatenate(batch_soh))
                 soh_collected = True
         
-        # Average MC samples for this snapshot
+
         snap_mean = np.mean(snap_preds, axis=0)
         all_u_ensemble.append(snap_mean)
     
-    # Average across all snapshots
+
     all_u = np.mean(all_u_ensemble, axis=0) * soh_range + soh_min
     all_soh = all_soh_list[0] * soh_range + soh_min
     
@@ -216,7 +216,7 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
 
     print(f"Generating plots for {'Scaling' if use_scaling else 'No Scaling'}...")
     
-    # Load snapshot models for visualization
+
     snapshot_models = []
     for snap_state in snapshots:
         snap_model = BatteryPINN(n_features=16, use_scaling=use_scaling).to(device)

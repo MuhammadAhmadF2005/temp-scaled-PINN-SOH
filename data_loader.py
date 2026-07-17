@@ -24,7 +24,7 @@ def extract_temperature(filename):
     return 25.0
 
 def compute_features(df_cycle):
-    # Focus on the charging phase: <I>/mA > 0 (or some small positive threshold)
+
     df_charge = df_cycle[df_cycle['<I>/mA'] > 10.0].copy()
     if df_charge.empty:
         return np.zeros(16)
@@ -36,14 +36,14 @@ def compute_features(df_cycle):
     
     v_end = np.max(v_arr) if len(v_arr) > 0 else 4.2
     
-    # Segment 1: CC mode voltage features [V_end - 0.2, V_end]
+
     v_mask = (v_arr >= v_end - 0.2) & (v_arr <= v_end)
     seg_v = v_arr[v_mask]
     seg_t_v = t_arr[v_mask]
     seg_q_v = q_arr[v_mask]
     
-    # Segment 2: CV mode current features [500mA, 100mA]
-    # CV mode starts approximately when voltage peaks
+
+
     idx_vmax = np.argmax(v_arr)
     cv_v_arr = v_arr[idx_vmax:]
     cv_i_arr = i_arr[idx_vmax:]
@@ -122,7 +122,7 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             grouped = df.groupby('cycle number')
             baseline_soh = None
             
-            # Step 1: Collect raw valid cycles
+
             valid_raw_cycles = []
             for cycle_num in sorted(grouped.groups.keys()):
                 df_c = grouped.get_group(cycle_num)
@@ -131,12 +131,12 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
                 if soh <= 10.0:
                     continue
                 
-                # Set baseline from first valid cycle
+
                 if baseline_soh is None:
                     baseline_soh = soh
                 
-                # Skip anomalous cycles (rest/diagnostic) whose capacity
-                # drops below 50% of the first cycle's capacity
+
+
                 if soh < baseline_soh * 0.5:
                     continue
                 
@@ -148,12 +148,12 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             if not valid_raw_cycles:
                 continue
                 
-            # Step 2: Smooth valid SOH values using a rolling median filter
+
             soh_raw_vals = [c['soh'] for c in valid_raw_cycles]
             s_series = pd.Series(soh_raw_vals)
             soh_smoothed = s_series.rolling(window=5, center=True, min_periods=1).median().values
             
-            # Step 3: Compute features and build data list, applying max_train_cycles if training
+
             for idx, c in enumerate(valid_raw_cycles):
                 if is_training and max_train_cycles is not None and idx >= max_train_cycles:
                     break
