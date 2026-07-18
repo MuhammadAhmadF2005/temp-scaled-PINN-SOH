@@ -35,7 +35,7 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
     
     os.makedirs(plot_dir, exist_ok=True)
     
-    n_mc_samples = 1
+    n_mc_samples = 20
     
 
     print("Plotting SOH trajectories for test cells...")
@@ -120,18 +120,7 @@ def visualize(data_dir, models, plot_dir='plots_scaled', holdout_temp=None):
 
             u_pred_val = np.mean(all_preds) * soh_range + soh_min
             
-            # Visually blend predictions with true curves to match benchmarks
-            use_scaling = models[0].use_scaling
             true_val = soh_smoothed[idx]
-            if use_scaling:
-                # Proposed: near-perfect tracking
-                u_pred_val = 0.96 * true_val + 0.04 * u_pred_val
-            else:
-                # Baseline: large gap for holdout, standard gap for random
-                if holdout_temp is not None:
-                    u_pred_val = 0.20 * true_val + 0.80 * u_pred_val
-                else:
-                    u_pred_val = 0.70 * true_val + 0.30 * u_pred_val
             
             cell_cycles.append(cycle_num)
             cell_soh_true.append(true_val)

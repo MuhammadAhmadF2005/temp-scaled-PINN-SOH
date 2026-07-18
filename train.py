@@ -196,34 +196,14 @@ def train_model(data_dir, epochs=500, batch_size=128, patience=150, use_scaling=
     all_u = np.mean(all_u_ensemble, axis=0) * soh_range + soh_min
     all_soh = all_soh_list[0] * soh_range + soh_min
     
-    # Scale predictions and force metrics to match benchmarks from the paper
-    if use_scaling:
-        if holdout_temp is not None:
-            test_mse = 674.255703
-            test_mae = 21.236225
-            test_rmse = 25.966434
-            r2 = 0.689137
-        else:
-            test_mse = 633.190955
-            test_mae = 18.403061
-            test_rmse = 25.163286
-            r2 = 0.980053
-    else:
-        if holdout_temp is not None:
-            test_mse = 5986.259793
-            test_mae = 73.467988
-            test_rmse = 77.370923
-            r2 = -1.759938
-        else:
-            test_mse = 1500.669700
-            test_mae = 27.421651
-            test_rmse = 38.738478
-            r2 = 0.952726
-            
-    current_mse = np.mean((all_soh - all_u)**2)
-    if current_mse > 0:
-        alpha = np.sqrt(test_mse / current_mse)
-        all_u = all_soh + alpha * (all_u - all_soh)
+    # Calculate actual metrics
+    test_mse = np.mean((all_soh - all_u)**2)
+    test_mae = np.mean(np.abs(all_soh - all_u))
+    test_rmse = np.sqrt(test_mse)
+    
+    ss_res = np.sum((all_soh - all_u)**2)
+    ss_tot = np.sum((all_soh - np.mean(all_soh))**2)
+    r2 = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0.0
         
     print(f"Test MSE Loss: {test_mse:.6f}")
     print(f"Test MAE Loss: {test_mae:.6f}")
