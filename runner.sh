@@ -1,7 +1,7 @@
 #!/bin/bash
 source venv/bin/activate || source new_venv/bin/activate
 
-rm -f results.txt
+# rm -f results.txt
 
 echo "1: HOLDOUT SET (35°C Unseen)"
 echo "--- Holdout - Baseline (No Scaling) ---" >> results.txt
