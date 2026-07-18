@@ -120,49 +120,51 @@ def prepare_dataset(data_dir, holdout_temp=None, val_ratio=0.1, test_ratio=0.2, 
             df = pd.read_csv(file)
             
             grouped = df.groupby('cycle number')
-            baseline_soh = None
-            
-
-            valid_raw_cycles = []
-            for cycle_num in sorted(grouped.groups.keys()):
-                df_c = grouped.get_group(cycle_num)
-                soh = df_c['Q discharge/mA.h'].max()
-                
-                if soh <= 10.0:
-                    continue
-                
-
-                if baseline_soh is None:
-                    baseline_soh = soh
-                
-
-
-                if soh < baseline_soh * 0.5:
-                    continue
-                
-                valid_raw_cycles.append({
-                    'df_c': df_c,
-                    'soh': soh
-                })
-            
-            if not valid_raw_cycles:
+            cycle_nums = sorted(grouped.groups.keys())
+            if not cycle_nums:
                 continue
                 
-
-            soh_raw_vals = [c['soh'] for c in valid_raw_cycles]
-            s_series = pd.Series(soh_raw_vals)
-            soh_smoothed = s_series.rolling(window=5, center=True, min_periods=1).median().values
+            raw_soh_vals = []
+            raw_features = []
+            for cycle_num in cycle_nums:
+                df_c = grouped.get_group(cycle_num)
+                soh = df_c['Q discharge/mA.h'].max()
+                raw_soh_vals.append(soh)
+                raw_features.append(compute_features(df_c))
+                
+            raw_soh_vals = np.array(raw_soh_vals)
+            raw_features = np.array(raw_features)
             
-
-            for idx, c in enumerate(valid_raw_cycles):
+            baseline_soh = None
+            for s in raw_soh_vals:
+                if s > 10.0:
+                    baseline_soh = s
+                    break
+            if baseline_soh is None:
+                continue
+                
+            is_valid = (raw_soh_vals > 10.0) & (raw_soh_vals >= baseline_soh * 0.5)
+            if not np.any(is_valid):
+                continue
+                
+            s_series = pd.Series(raw_soh_vals)
+            s_series[~is_valid] = np.nan
+            soh_interpolated = s_series.interpolate(method='linear').ffill().bfill().values
+            soh_smoothed = pd.Series(soh_interpolated).rolling(window=5, center=True, min_periods=1).median().values
+            
+            for i in range(16):
+                f_series = pd.Series(raw_features[:, i])
+                f_series[~is_valid] = np.nan
+                raw_features[:, i] = f_series.interpolate(method='linear').ffill().bfill().values
+                
+            for idx, cycle_num in enumerate(cycle_nums):
                 if is_training and max_train_cycles is not None and idx >= max_train_cycles:
                     break
-                features = compute_features(c['df_c'])
                 data_list.append({
-                    'features': features,
+                    'features': raw_features[idx],
                     'soh': soh_smoothed[idx],
                     'temperature': temp,
-                    'cycle': idx + 1
+                    'cycle': cycle_num
                 })
         return data_list
 

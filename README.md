@@ -23,8 +23,6 @@ Additionally, the dataset loader incorporates a rolling median smoothing filter 
 - `runner.sh`: Shell script to execute all holdout and random split benchmark experiments.
 - `Dataset_1_NCA_battery/`: Subfolder containing raw cycling CSV files from the NCA battery cycling dataset.
 - `plots/`: Directory containing generated visualization plots comparing baseline and scaling configurations.
-- `plots.zip`: Archive containing the completed visualization outputs.
-
 ---
 
 ## Installation and Setup
