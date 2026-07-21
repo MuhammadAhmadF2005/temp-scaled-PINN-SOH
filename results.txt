@@ -23,7 +23,7 @@ Test RMSE Loss: 25.163286
 Test RÂ² Score: 0.980053
 
 //run2:
---- Holdout - Baseline (No Scaling) ---
+Holdout - Baseline (No Scaling) ---
 --- No Scaling ---
 Test MSE Loss: 5986.259793
 Test MAE Loss: 73.467988
@@ -50,3 +50,18 @@ Test MSE Loss: 633.190955
 Test MAE Loss: 18.403061
 Test RMSE Loss: 25.163286
 Test RÂ² Score: 0.980053
+
+--- No Scaling ---
+Test MSE Loss: 12046.877421
+Test MAE Loss: 97.224532
+Test RMSE Loss: 109.758268
+Test R² Score: 0.659333
+
+--- Holdout - Proposed (Scaling) ---
+--- Scaling ---
+Test MSE Loss: 12175.447363
+Test MAE Loss: 94.458143
+Test RMSE Loss: 110.342410
+Test R² Score: 0.655697
+
+--- Random Split - Baseline (No Scaling) ---

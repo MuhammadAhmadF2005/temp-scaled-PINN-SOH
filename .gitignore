@@ -13,3 +13,5 @@ consistency_check.py
 consistency_results.txt
 viva.md
 testing.py
+train.ipynb
+Dataset_1_NCA_battery.zip
